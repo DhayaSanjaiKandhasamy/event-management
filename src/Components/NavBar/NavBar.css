@@ -1,0 +1,6 @@
+.header-container {
+    width: 100vw;
+    background-color: rgb(185, 172, 172);
+    height: 80px;
+    border: 1px solid gray;
+}
