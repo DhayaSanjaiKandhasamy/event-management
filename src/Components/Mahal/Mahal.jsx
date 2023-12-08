@@ -37,4 +37,4 @@ function Product({mahalData}) {
   )
 }
 
-export default Product
+export default Product;

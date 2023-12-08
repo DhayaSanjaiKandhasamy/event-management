@@ -1,12 +1,13 @@
 import React from "react";
 import "./NavBar.css";
 import avatar from "../../Assets/Profile.svg";
+import { Link } from "react-router-dom";
 
 function NavBar() {
   return (
     <header className="w-full shadow-[0_3px_6px_0_rgba(0,0,0,0.1)] sticky z-[1] border-b-[#eee] border-b border-solid top-0	bg-white ">
       <nav className="h-[50px] flex items-center bg-white relative h-20 gap-[38px] max-w-[1080px] w-full justify-between mx-auto my-0 w-11/12  py-10 max-w-5xl 	">
-        <h1 className="text-center text-2xl font-bold">Shaadi Hall</h1>
+        <Link to={'/'} className="text-center text-2xl font-bold">Shaadi Hall</Link>
 
         <div className="grid grid-cols-[max-content_max-content_max-content] items-center gap-10">
           <div className="relative w-full">

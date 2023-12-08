@@ -14,6 +14,7 @@ function HomePage() {
 
   useEffect(() => {
     const getMahals = async () => {
+      setLoading(true)
       const docsData = await getDocs(collection(db, "mahals"));
       const mahals = [];
       docsData.forEach((doc) => {
@@ -22,6 +23,7 @@ function HomePage() {
           id: doc.id,
         });
       });
+      setLoading(false)
       setMahals(mahals);
     };
     getMahals();
