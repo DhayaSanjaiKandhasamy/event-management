@@ -1,3 +1,4 @@
+import { UserAuth } from "../../Context/AuthContext";
 import {
   Firestore,
   Timestamp,
@@ -11,7 +12,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { db } from "../../Services/firebase.config";
 import Button from "../../Components/Utilities/Button";
-import { Carousel, DatePicker, Input, Modal, Spin } from "antd";
+import { Carousel, Checkbox, DatePicker, Input, Modal, Spin } from "antd";
 
 import notification from "../../Components/Feedback/Notification";
 import moment from "moment";
@@ -23,6 +24,9 @@ const initialData = {
   endDate: null,
   address: "",
   phoneNo: "",
+  caterings: false,
+  photography: false,
+  decorations: false,
 };
 const MahalDetails = () => {
   const [mahalData, setMahalData] = useState({}); //TODO need to set to empty value
@@ -33,6 +37,7 @@ const MahalDetails = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const [bookings, setBookings] = useState([]);
   const [newBooking, setNewBooking] = useState(initialData);
+  const { user } = UserAuth();
 
   useEffect(() => {
     const getMahals = async () => {
@@ -99,8 +104,10 @@ const MahalDetails = () => {
         endDate: Timestamp.fromDate(newBooking.endDate.endOf("Day").toDate()),
         address: newBooking.address,
         phoneNo: newBooking.phoneNo,
+        caterings: newBooking.caterings ?? false, 
+        photography: newBooking.photography ?? false,
+        decorations: newBooking.decorations ?? false,
       };
-      console.log(newBookingData);
       const bookingsCollRef = collection(db, "mahals", mahalId, "bookings");
       const ref = await addDoc(bookingsCollRef, newBookingData);
       setNewBooking(initialData);
@@ -204,11 +211,13 @@ const MahalDetails = () => {
             Venue Highlights
           </h1>
 
-          <Link to={`/mahal/${mahalData.id}/bookings`}>
-            <NormalButton title="View Bookings" style={{ width: "10rem" }}>
-              {" "}
-            </NormalButton>
-          </Link>
+          {user.isAdmin && (
+            <Link to={`/mahal/${mahalData.id}/bookings`}>
+              <NormalButton title="View Bookings" style={{ width: "10rem" }}>
+                {" "}
+              </NormalButton>
+            </Link>
+          )}
         </div>
         <div class="grid grid-cols-2 gap-3 md:gap-6 ">
           <div class="flex flex-col space-y-2 rounded-2xl bg-white p-3 shadow-xl md:space-y-3 md:p-7">
@@ -443,6 +452,40 @@ const MahalDetails = () => {
                   type="number"
                   className="w-4/6"
                 ></Input>
+              </div>
+
+              <hr></hr>
+              <div>Other Bookings</div>
+              <div className="flex items-center gap-5">
+                <Checkbox
+                  onChange={(e) => {
+                    handleValueChange("caterings", e.target.checked);
+                  }}
+                  checked={newBooking.caterings}
+                  // className="w-4/6"
+                >
+                  {" "}
+                  Caterings{" "}
+                </Checkbox>
+                <Checkbox
+                  onChange={(e) => {
+                    handleValueChange("decorations", e.target.checked);
+                  }}
+                  checked={newBooking.decorations}
+                  // className="w-4/6"
+                >
+                  Decorations{" "}
+                </Checkbox>
+                <Checkbox
+                  onChange={(e) => {
+                    handleValueChange("photography", e.target.checked);
+                  }}
+                  checked={newBooking.photography}
+                  // className="w-4/6"
+                >
+                  {" "}
+                  Photography{" "}
+                </Checkbox>
               </div>
 
               <div className="flex justify-center mt-5">

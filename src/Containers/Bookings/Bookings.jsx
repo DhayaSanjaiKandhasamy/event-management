@@ -143,6 +143,48 @@ function Bookings() {
       },
     },
     {
+      title: "Caterings",
+      dataIndex: "caterings",
+      key: "caterings",
+      width: "5%",
+      render: (caterings) => {
+        return <p>{caterings ?  "YES" : "NO"}</p>;
+      },
+      sorter: (a, b) => {
+        if (a.caterings < b.caterings) return -1;
+        if (a.caterings > b.caterings) return 1;
+        return 0;
+      },
+    },
+    {
+      title: "Decorations",
+      dataIndex: "decorations",
+      key: "decorations",
+      width: "15%",
+      render: (decorations) => {
+        return <p>{decorations ?  "YES" : "NO"}</p>;
+      },
+      sorter: (a, b) => {
+        if (a.decorations < b.decorations) return -1;
+        if (a.decorations > b.decorations) return 1;
+        return 0;
+      },
+    },
+    {
+      title: "Photography",
+      dataIndex: "photography",
+      key: "photography",
+      width: "15%",
+      render: (photography) => {
+        return <p>{photography ?  "YES" : "NO"}</p>;
+      },
+      sorter: (a, b) => {
+        if (a.photography < b.photography) return -1;
+        if (a.photography > b.photography) return 1;
+        return 0;
+      },
+    },
+    {
       title: "Actions",
       key: "action",
       fixed: "right",
