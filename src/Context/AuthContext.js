@@ -16,17 +16,20 @@ export const AuthContextProvider = ({ children }) => {
   const googleSignIn = () => {
     const provider = new GoogleAuthProvider();
     // signInWithPopup(auth, provider);
-    signInWithRedirect(auth, provider)
+    signInWithPopup(auth, provider)
   };
 
   const logOut = () => {
       signOut(auth)
+      setUser(null)
   }
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+
+       console.log("Current User",currentUser)
       
-      if(currentUser) {
+      if(currentUser?.email) {
         setUser({
           name: currentUser?.displayName ?? "" , 
           phoneNo: currentUser?.phoneNumber ?? "",
