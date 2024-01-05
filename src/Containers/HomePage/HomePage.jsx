@@ -41,15 +41,7 @@ function HomePage() {
       /> */}
           <main className="w-11/12	m-auto my-5 max-w-5xl	">
             <div className=" ">
-              <ReactSearchBox
-                placeholder="Placeholder"
-                value="Doe"
-                // onSelect={({ item }) => {
-                //   handleClickSearchDropDown(item.key);
-                // }}
-                // data={dropDownDataSource}
-                // callback={(record) => console.log(record)}
-              />
+             
             </div>
             <div className="mt-7 mx-0 my-6">
               <article className="aspect-[9/2] min-w-full rounded-xl">

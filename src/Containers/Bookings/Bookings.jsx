@@ -14,6 +14,7 @@ import { useParams } from "react-router-dom";
 import moment from "moment";
 import NormalButton from "../../Components/Utilities/NormalButton";
 import showNotification from "../../Components/Feedback/Notification";
+import { formatNum } from "../../Helpers/helpers";
 
 function Bookings() {
   const [bookings, setBookings] = useState([]);
@@ -60,11 +61,13 @@ function Bookings() {
   const hanldeCancelBooking = async (bookingId) => {
     try {
       setLoading(true);
-      const docRef = await deleteDoc(doc(db, `mahals/${mahalData.id}/bookings`, bookingId));
+      const docRef = await deleteDoc(
+        doc(db, `mahals/${mahalData.id}/bookings`, bookingId)
+      );
       setBookings((prevBookings) => {
         return prevBookings.filter((booking) => booking.id !== bookingId);
       });
-      showNotification("success","Cancelled Succesfully")
+      showNotification("success", "Cancelled Succesfully");
     } catch (err) {
       console.log(err);
       showNotification("error", "Something went wrong, please try again later");
@@ -77,6 +80,7 @@ function Bookings() {
     {
       title: "Groom Name",
       dataIndex: "groomName",
+      width: "10%",
       key: "groomName",
       sorter: (a, b) => {
         if (a.groomName < b.groomName) return -1;
@@ -87,6 +91,7 @@ function Bookings() {
     {
       title: "Bride Name",
       dataIndex: "brideName",
+      width: "10%",
       key: "brideName",
       sorter: (a, b) => {
         if (a.brideName < b.brideName) return -1;
@@ -94,23 +99,44 @@ function Bookings() {
         return 0;
       },
     },
-    {
-      title: "Address",
-      dataIndex: "address",
-      key: "adress",
-      sorter: (a, b) => {
-        if (a.adress < b.adress) return -1;
-        if (a.adress > b.adress) return 1;
-        return 0;
-      },
-    },
+
     {
       title: "Phone No",
       dataIndex: "phoneNo",
       key: "phoneNo",
+      width: "10%",
+
       sorter: (a, b) => {
         if (a.phoneNo < b.phoneNo) return -1;
         if (a.phoneNo > b.phoneNo) return 1;
+        return 0;
+      },
+    },
+    {
+      title: "Total Price",
+      dataIndex: "totalPrice",
+      key: "totalPrice",
+      width: "10%",
+
+      render: (totalPrice) => {
+        return (
+          <p className="font-bold text-[#d11243]">{formatNum(totalPrice)}</p>
+        );
+      },
+      sorter: (a, b) => {
+        if (a.totalPrice < b.totalPrice) return -1;
+        if (a.totalPrice > b.totalPrice) return 1;
+        return 0;
+      },
+    },
+    {
+      title: "Address",
+      dataIndex: "address",
+      key: "adress",
+      width: "10%",
+      sorter: (a, b) => {
+        if (a.adress < b.adress) return -1;
+        if (a.adress > b.adress) return 1;
         return 0;
       },
     },
@@ -146,9 +172,9 @@ function Bookings() {
       title: "Caterings",
       dataIndex: "caterings",
       key: "caterings",
-      width: "5%",
+      width: "10%",
       render: (caterings) => {
-        return <p>{caterings ?  "YES" : "NO"}</p>;
+        return <p>{caterings ? "YES" : "NO"}</p>;
       },
       sorter: (a, b) => {
         if (a.caterings < b.caterings) return -1;
@@ -160,9 +186,9 @@ function Bookings() {
       title: "Decorations",
       dataIndex: "decorations",
       key: "decorations",
-      width: "15%",
+      width: "10%",
       render: (decorations) => {
-        return <p>{decorations ?  "YES" : "NO"}</p>;
+        return <p>{decorations ? "YES" : "NO"}</p>;
       },
       sorter: (a, b) => {
         if (a.decorations < b.decorations) return -1;
@@ -174,9 +200,9 @@ function Bookings() {
       title: "Photography",
       dataIndex: "photography",
       key: "photography",
-      width: "15%",
+      width: "10%",
       render: (photography) => {
-        return <p>{photography ?  "YES" : "NO"}</p>;
+        return <p>{photography ? "YES" : "NO"}</p>;
       },
       sorter: (a, b) => {
         if (a.photography < b.photography) return -1;
@@ -188,6 +214,8 @@ function Bookings() {
       title: "Actions",
       key: "action",
       fixed: "right",
+      width: "10%",
+
       render: (bookingDetails) => {
         return (
           <Popconfirm
@@ -208,17 +236,7 @@ function Bookings() {
     <Spin spinning={loading}>
       <div className="">
         <main className="w-11/12	m-auto my-5 max-w-5xl	">
-          <div className=" ">
-            {/* <ReactSearchBox
-              placeholder="Placeholder"
-              value="Doe"
-              // onSelect={({ item }) => {
-              //   handleClickSearchD ropDown(item.key);
-              // }}
-              // data={dropDownDataSource}
-              // callback={(record) => console.log(record)}
-            /> */}
-          </div>
+          <div className=" "></div>
           <h1 className="h-10 text-3xl truncate font-sans font-bold my-10">
             Booking Details - {mahalData.name}
           </h1>
@@ -228,6 +246,7 @@ function Bookings() {
             dataSource={bookings}
             className="isoSimpleTable"
             bordered={true}
+            scroll={{ x: 1500 }}
           ></Table>
         </main>
       </div>

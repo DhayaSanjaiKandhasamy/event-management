@@ -12,11 +12,21 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { db } from "../../Services/firebase.config";
 import Button from "../../Components/Utilities/Button";
-import { Carousel, Checkbox, DatePicker, Input, Modal, Spin } from "antd";
+import {
+  Carousel,
+  Checkbox,
+  DatePicker,
+  Input,
+  Modal,
+  Radio,
+  Spin,
+} from "antd";
 
 import notification from "../../Components/Feedback/Notification";
 import moment from "moment";
 import NormalButton from "../../Components/Utilities/NormalButton";
+import { formatNum } from "../../Helpers/helpers";
+
 const initialData = {
   groomName: "",
   brideName: "",
@@ -28,6 +38,58 @@ const initialData = {
   photography: false,
   decorations: false,
 };
+
+const otherBookingsInitialData = [
+  {
+    dateTime: null,
+    caterings: false,
+    photography: false,
+    decorations: false,
+    breakFastCount: 0,
+    lunchCount: 0,
+    dinnerCount: 0,
+    decorationsType: 0, //0-normal , 1-premium
+  },
+];
+
+const calcTotalPrice = (booking, rent) => {
+  let totalPrice = rent;
+
+  if (booking.cateringsDayOne) {
+    totalPrice += 80 * booking.breakFastCountDayOne;
+    totalPrice += 90 * booking.lunchCountDayOne;
+    totalPrice += 100 * booking.dinnerCountDayOne;
+  }
+  if (booking.decorationsDayOne) {
+    if (booking.decorationsTypeDayOne === 0) {
+      totalPrice += 50000;
+    } else {
+      totalPrice += 100000;
+    }
+  }
+  if (booking.photographyDayOne) {
+    totalPrice += 75000;
+  }
+
+  if (booking.cateringsDayTwo) {
+    totalPrice += 80 * booking.breakFastCountDayTwo;
+    totalPrice += 90 * booking.lunchCountDayTwo;
+    totalPrice += 100 * booking.dinnerCountDayTwo;
+  }
+  if (booking.decorationsDayTwo) {
+    if (booking.decorationsTypeDayTwo === 0) {
+      totalPrice += 50000;
+    } else {
+      totalPrice += 100000;
+    }
+  }
+  if (booking.photographyDayTwo) {
+    totalPrice += 75000;
+  }
+
+  return totalPrice;
+};
+
 const MahalDetails = () => {
   const [mahalData, setMahalData] = useState({}); //TODO need to set to empty value
   const params = useParams();
@@ -37,7 +99,12 @@ const MahalDetails = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const [bookings, setBookings] = useState([]);
   const [newBooking, setNewBooking] = useState(initialData);
+  const [mahalRent, setMahalRent] = useState(0);
   const { user } = UserAuth();
+
+  const [otherBookings, setOtherBookings] = useState({
+    daysCount: 0,
+  });
 
   useEffect(() => {
     const getMahals = async () => {
@@ -45,7 +112,6 @@ const MahalDetails = () => {
       const docRef = doc(db, "mahals", mahalId);
       const docSnap = await getDoc(docRef);
 
-      console.log(docSnap.data());
       setMahalData({
         ...docSnap.data(),
         id: docSnap.id,
@@ -82,10 +148,52 @@ const MahalDetails = () => {
   const { RangePicker } = DatePicker;
 
   const handleChangeDate = (e) => {
-    setNewBooking({
-      startDate: e[0],
-      endDate: e[1],
-    });
+    const days = e[1].diff(e[0], "days") + 1;
+
+    if (days > 2) {
+      return notification("error", "Max Limit for Each Booking : 2 days");
+    }
+    if (e?.[0]) {
+      const otherBookingsDetails = {
+        daysCount: days,
+        dateTimeDayOne: e[0],
+        cateringsDayOne: false,
+        photographyDayOne: false,
+        decorationsDayOne: false,
+        breakFastCountDayOne: 0,
+        lunchCountDayOne: 0,
+        dinnerCountDayOne: 0,
+        decorationsTypeDayOne: 0, //0-normal , 1-premium
+      };
+      if (days === 2) {
+        otherBookingsDetails.dateTimeDayTwo = e[1];
+        otherBookingsDetails.cateringsDayTwo = false;
+        otherBookingsDetails.photographyDayTwo = false;
+        otherBookingsDetails.decorationsDayTwo = false;
+        otherBookingsDetails.breakFastCountDayTwo = 0;
+        otherBookingsDetails.lunchCountDayTwo = 0;
+        otherBookingsDetails.dinnerCountDayTwo = 0;
+        otherBookingsDetails.decorationsTypeDayTwo = 0;
+      }
+
+      setOtherBookings(otherBookingsDetails);
+
+      setNewBooking({
+        startDate: e[0],
+        endDate: e[1],
+      });
+      setMahalRent(mahalData.pricePerDay * days);
+    } else {
+      setNewBooking({
+        startDate: null,
+        endDate: null,
+      });
+      setMahalRent(0);
+
+      setOtherBookings({
+        daysCount: 0,
+      });
+    }
   };
 
   const handleValueChange = (fieldName, value) => {
@@ -96,19 +204,35 @@ const MahalDetails = () => {
     try {
       setModalLoading(true);
       const newBookingData = {
-        groomName: newBooking.groomName,
-        brideName: newBooking.brideName,
+        groomName: newBooking.groomName || "",
+        brideName: newBooking.brideName || "",
         startDate: Timestamp.fromDate(
           newBooking.startDate.startOf("Day").toDate()
         ),
         endDate: Timestamp.fromDate(newBooking.endDate.endOf("Day").toDate()),
-        address: newBooking.address,
-        phoneNo: newBooking.phoneNo,
-        caterings: newBooking.caterings ?? false, 
+        address: newBooking.address || "",
+        phoneNo: newBooking.phoneNo || "",
+        caterings: newBooking.caterings ?? false,
         photography: newBooking.photography ?? false,
         decorations: newBooking.decorations ?? false,
+        totalPrice: calcTotalPrice(otherBookings, mahalRent),
+        cateringsDayOne: otherBookings.cateringsDayOne ?? false,
+        photographyDayOne: otherBookings.photographyDayOne ?? false,
+        decorationsDayOne: otherBookings.decorationsDayOne ?? false,
+        breakFastCountDayOne: otherBookings.breakFastCountDayOne ?? 0,
+        lunchCountDayOne: otherBookings.lunchCountDayOne ?? 0,
+        dinnerCountDayOne: otherBookings.dinnerCountDayOne ?? 0,
+        decorationsTypeDayOne: otherBookings.decorationsTypeDayOne ?? 0,
+        cateringsDayTwo: otherBookings.cateringsDayTwo ?? false,
+        photographyDayTwo: otherBookings.photographyDayTwo ?? false,
+        decorationsDayTwo: otherBookings.decorationsDayTwo ?? false,
+        breakFastCountDayTwo: otherBookings.breakFastCountDayTwo ?? 0,
+        lunchCountDayTwo: otherBookings.lunchCountDayTwo ?? 0,
+        dinnerCountDayTwo: otherBookings.dinnerCountDayTwo ?? 0,
+        decorationsTypeDayTwo: otherBookings.decorationsDayOne ?? 0,
       };
       const bookingsCollRef = collection(db, "mahals", mahalId, "bookings");
+      console.log(newBookingData);
       const ref = await addDoc(bookingsCollRef, newBookingData);
       setNewBooking(initialData);
 
@@ -136,6 +260,13 @@ const MahalDetails = () => {
     );
     return result;
   };
+
+  const handleOtherBookingChange = (fieldName, value) => {
+    setOtherBookings((prevState) => ({ ...prevState, [fieldName]: value }));
+  };
+
+  const totalPrice = calcTotalPrice(otherBookings, mahalRent);
+
   return (
     <Spin spinning={loading}>
       <div
@@ -392,10 +523,12 @@ const MahalDetails = () => {
           footer={() => {}}
           open={showModal}
           onCancel={handleCloseModal}
-          style={{ width: "70%" }}
+          width={"50%"}
+          style={{ top: "50px" }}
+          // bodyStyle={{ height: "60vh", }}
         >
           <Spin spinning={modalLoading}>
-            <div className="flex gap-5 flex-col mt-5">
+            <div className="flex gap-5 flex-col mt-5 ">
               <div className="flex items-center justify-between gap-5">
                 <label>Select Date :</label>
                 <RangePicker
@@ -453,44 +586,262 @@ const MahalDetails = () => {
                   className="w-4/6"
                 ></Input>
               </div>
+            </div>
+            <br></br>
+            <hr></hr>
+            <br></br>
 
-              <hr></hr>
-              <div>Other Bookings</div>
-              <div className="flex items-center gap-5">
+            <div className="text-base font-bold mb-4">Other Bookings</div>
+
+            {otherBookings.daysCount > 0 && (
+              <div className="flex  flex-col gap-5">
+                <label class="text-xs  font-bold md:text-base">
+                  {otherBookings.dateTimeDayOne.format("dddd, DD MMM YYYY")}
+                </label>
+
                 <Checkbox
                   onChange={(e) => {
-                    handleValueChange("caterings", e.target.checked);
+                    handleOtherBookingChange(
+                      "cateringsDayOne",
+                      e.target.checked
+                    );
                   }}
-                  checked={newBooking.caterings}
+                  checked={otherBookings.cateringsDayOne}
                   // className="w-4/6"
                 >
                   {" "}
                   Caterings{" "}
                 </Checkbox>
+
+                {otherBookings.cateringsDayOne && (
+                  <>
+                    <div className="flex items-center justify-between gap-5">
+                      <label className="ml-6 whitespace-nowrap">
+                        BreakFast (₹80) :
+                      </label>
+                      <Input
+                        onChange={(e) => {
+                          handleOtherBookingChange(
+                            "breakFastCountDayOne",
+                            e.target.value
+                          );
+                        }}
+                        value={otherBookings.breakFastCountDayOne}
+                        type="number"
+                        className="w-4/6"
+                      ></Input>
+                    </div>
+                    <div className="flex items-center justify-between gap-5">
+                      <label className="ml-6 whitespace-nowrap">
+                        Lunch Count (₹90) :
+                      </label>
+                      <Input
+                        onChange={(e) => {
+                          handleOtherBookingChange(
+                            "lunchCountDayOne",
+                            e.target.value
+                          );
+                        }}
+                        value={otherBookings.lunchCountDayOne}
+                        type="number"
+                        className="w-4/6"
+                      ></Input>
+                    </div>
+                    <div className="flex items-center justify-between gap-5">
+                      <label className=" ml-6 whitespace-nowrap">
+                        Dinner (₹100) :
+                      </label>
+                      <Input
+                        onChange={(e) => {
+                          handleOtherBookingChange(
+                            "dinnerCountDayone",
+                            e.target.value
+                          );
+                        }}
+                        value={otherBookings.dinnerCountDayone}
+                        type="number"
+                        className="w-4/6"
+                      ></Input>
+                    </div>
+                  </>
+                )}
                 <Checkbox
                   onChange={(e) => {
-                    handleValueChange("decorations", e.target.checked);
+                    handleOtherBookingChange(
+                      "decorationsDayOne",
+                      e.target.checked
+                    );
                   }}
-                  checked={newBooking.decorations}
+                  checked={otherBookings.decorationsDayOne}
                   // className="w-4/6"
                 >
                   Decorations{" "}
                 </Checkbox>
+
+                {otherBookings.decorationsDayOne && (
+                  <>
+                    <div className="flex items-center justify-between gap-5">
+                      <Radio.Group
+                        onChange={(e) => {
+                          handleOtherBookingChange(
+                            "decorationsTypeDayOne",
+                            e.target.value
+                          );
+                        }}
+                        value={otherBookings.decorationsTypeDayOne}
+                        className="ml-6"
+                      >
+                        <Radio value={0}>Normal (₹50,000)</Radio>
+                        <Radio value={1}>Premium (₹1,00,000)</Radio>
+                      </Radio.Group>
+                    </div>
+                  </>
+                )}
+
                 <Checkbox
                   onChange={(e) => {
-                    handleValueChange("photography", e.target.checked);
+                    handleOtherBookingChange(
+                      "photographyDayOne",
+                      e.target.checked
+                    );
                   }}
-                  checked={newBooking.photography}
+                  checked={otherBookings.photographyDayOne}
                   // className="w-4/6"
                 >
                   {" "}
-                  Photography{" "}
+                  Photography (₹75,000)
                 </Checkbox>
+                <br></br>
               </div>
+            )}
 
-              <div className="flex justify-center mt-5">
-                <Button title={"Book"} onClick={handleSubmitForm}></Button>
+            {otherBookings.daysCount > 1 && (
+              <div className="flex  flex-col gap-5">
+                <label class="text-xs  font-bold md:text-base">
+                  {otherBookings.dateTimeDayTwo.format("dddd, DD MMM YYYY")}
+                </label>
+
+                <Checkbox
+                  onChange={(e) => {
+                    handleOtherBookingChange(
+                      "cateringsDayTwo",
+                      e.target.checked
+                    );
+                  }}
+                  checked={otherBookings.cateringsDayTwo}
+                  // className="w-4/6"
+                >
+                  {" "}
+                  Caterings{" "}
+                </Checkbox>
+
+                {otherBookings.cateringsDayTwo && (
+                  <>
+                    <div className="flex items-center justify-between gap-5">
+                      <label className="ml-6 whitespace-nowrap">
+                        BreakFast (₹80) :
+                      </label>
+                      <Input
+                        onChange={(e) => {
+                          handleOtherBookingChange(
+                            "breakFastCountDayTwo",
+                            e.target.value
+                          );
+                        }}
+                        value={otherBookings.breakFastCountDayTwo}
+                        type="number"
+                        className="w-4/6"
+                      ></Input>
+                    </div>
+                    <div className="flex items-center justify-between gap-5">
+                      <label className="ml-6 whitespace-nowrap">
+                        Lunch Count (₹90) :
+                      </label>
+                      <Input
+                        onChange={(e) => {
+                          handleOtherBookingChange(
+                            "lunchCountDayTwo",
+                            e.target.value
+                          );
+                        }}
+                        value={otherBookings.lunchCountDayTwo}
+                        type="number"
+                        className="w-4/6"
+                      ></Input>
+                    </div>
+                    <div className="flex items-center justify-between gap-5">
+                      <label className=" ml-6 whitespace-nowrap">
+                        Dinner (₹100) :
+                      </label>
+                      <Input
+                        onChange={(e) => {
+                          handleOtherBookingChange(
+                            "dinnerCountDayTwo",
+                            e.target.value
+                          );
+                        }}
+                        value={otherBookings.dinnerCountDayTwo}
+                        type="number"
+                        className="w-4/6"
+                      ></Input>
+                    </div>
+                  </>
+                )}
+                <Checkbox
+                  onChange={(e) => {
+                    handleOtherBookingChange(
+                      "decorationsDayTwo",
+                      e.target.checked
+                    );
+                  }}
+                  checked={otherBookings.decorationsDayTwo}
+                  // className="w-4/6"
+                >
+                  Decorations{" "}
+                </Checkbox>
+
+                {otherBookings.decorationsDayTwo && (
+                  <>
+                    <div className="flex items-center justify-between gap-5">
+                      <Radio.Group
+                        onChange={(e) => {
+                          handleOtherBookingChange(
+                            "decorationsTypeDayTwo",
+                            e.target.value
+                          );
+                        }}
+                        value={otherBookings.decorationsTypeDayTwo}
+                        className="ml-6"
+                      >
+                        <Radio value={0}>Normal (₹50,000)</Radio>
+                        <Radio value={1}>Premium (₹1,00,000)</Radio>
+                      </Radio.Group>
+                    </div>
+                  </>
+                )}
+
+                <Checkbox
+                  onChange={(e) => {
+                    handleOtherBookingChange(
+                      "photographyDayTwo",
+                      e.target.checked
+                    );
+                  }}
+                  checked={otherBookings.photographyDayTwo}
+                  // className="w-4/6"
+                >
+                  {" "}
+                  Photography (₹75,000)
+                </Checkbox>
+                <br></br>
               </div>
+            )}
+
+            <div className="flex flex-col justify-center items-center mt-5 gap-2">
+              <label class="text-xs  tracking-[0.15em] md:text-base">
+                Total : {formatNum(totalPrice)}
+              </label>
+              <Button title={"Book"} onClick={handleSubmitForm}></Button>
             </div>
           </Spin>
         </Modal>

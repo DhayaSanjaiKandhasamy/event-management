@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./NavBar.css";
 import avatar from "../../Assets/Profile.svg";
 import { Link } from "react-router-dom";
@@ -6,18 +6,73 @@ import NormalButton from "../Utilities/NormalButton";
 import { UserAuth } from "../../Context/AuthContext";
 import { Input, Modal, Spin } from "antd";
 import Button from "../Utilities/Button";
+import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { db } from "../../Services/firebase.config";
+import notification from "../../Components/Feedback/Notification";
 
 function NavBar() {
   const { logOut, user } = UserAuth();
 
   const [showModal, setShowModal] = useState(false);
 
+  const [userDetails, setUserDetails] = useState({});
+
   const hanldeLogOut = async () => {
     await logOut();
   };
 
+  console.log(user.uid);
+
+  useEffect(() => {
+    setUserDetails((prev) => ({ ...prev, email: user.email }));
+  }, [user?.uid]);
+
   const handleCloseModal = () => {
     setShowModal(false);
+  };
+
+  useEffect(() => {
+    const getUser = async () => {
+      const data = await getDoc(doc(db, "users", user.uid));
+      console.log(data.exists())
+      if (data.exists()) {
+        setUserDetails(data.data());
+      }
+    };
+
+    getUser();
+  }, [user.uid]);
+
+  const handleSave = async () => {
+    try {
+      const data = await getDoc(doc(db, "users", user.uid));
+      if (data.exists()) {
+        updateDoc(doc(db, "users", user.uid), {
+          phoneNo: userDetails.phoneNo || "",
+          name: userDetails.name || "",
+          address: userDetails.address || "",
+        });
+      } else {
+        setDoc(doc(db, "users", user.uid), {
+          phoneNo: userDetails.phoneNo || "",
+          name: userDetails.name || "",
+          address: userDetails.address || "",
+        });
+      }
+      notification("success", "Profile Updated successfully");
+
+    } catch (err) {
+      console.log(err);
+
+      notification("error", "something went wrong please try agian later");
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setUserDetails((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
   return (
     <header className="w-full shadow-[0_3px_6px_0_rgba(0,0,0,0.1)] sticky z-[1] border-b-[#eee] border-b border-solid top-0	bg-white ">
@@ -61,11 +116,10 @@ function NavBar() {
                   <div className="flex items-center justify-between gap-5">
                     <label className="whitespace-nowrap">Name :</label>
                     <Input
-                      // onChange={(e) => {
-                      //   handleValueChange("groomName", e.target.value);
-                      // }}
-                      value={user.name}
-                      disabled
+                      onChange={(e) => {
+                        handleChange("name", e.target.value);
+                      }}
+                      value={userDetails.name}
                       type="text"
                       className="w-4/6"
                     ></Input>
@@ -74,12 +128,9 @@ function NavBar() {
                   <div className="flex items-center justify-between gap-5">
                     <label className="whitespace-nowrap">Email :</label>
                     <Input
-                      // onChange={(e) => {
-                      //   handleValueChange("brideName", e.target.value);
-                      // }}
-                      value={user.email}
-                      type="text"
+                      value={userDetails.email}
                       disabled
+                      type="text"
                       className="w-4/6"
                     ></Input>
                   </div>
@@ -87,21 +138,33 @@ function NavBar() {
                   <div className="flex items-center justify-between gap-5">
                     <label className="whitespace-nowrap"> Phone No :</label>
                     <Input
-                      // onChange={(e) => {
-                      //   handleValueChange("address", e.target.value);
-                      // }}
-                      value={user.phoneNo}
-                      disabled
-                      type="address"
+                      onChange={(e) => {
+                        handleChange("phoneNo", e.target.value);
+                      }}
+                      value={userDetails.phoneNo}
+                      type="text"
+                      className="w-4/6"
+                    ></Input>
+                  </div>
+                  <div className="flex items-center justify-between gap-5">
+                    <label className="whitespace-nowrap"> Address :</label>
+                    <Input
+                      onChange={(e) => {
+                        handleChange("address", e.target.value);
+                      }}
+                      value={userDetails.address}
+                      type="text"
                       className="w-4/6"
                     ></Input>
                   </div>
 
-                  <div className="flex justify-center mt-5">
-                    <Button
+                  <div className="flex justify-center mt-5 gap-4">
+                    <Button title={"Save"} style={{width:'100px'}} onClick={handleSave}></Button>
+
+                    <NormalButton
                       title={"Log Out"}
                       onClick={hanldeLogOut}
-                    ></Button>
+                    ></NormalButton>
                   </div>
                 </div>
               </Spin>
