@@ -28,22 +28,12 @@ pipeline {
             }
         }
         
-        stage('Sonarqube') {
-            steps {
-                withSonarQubeEnv('sonar-server'){
-                   sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=event-management-app \
-                   -Dsonar.projectKey=event-management-app  '''
-               }
-            }
-        }
-        
         stage('Build') {
             steps {
                 sh "npm install"
             }
         }
 
-       # withdockerRegistry (select this option in pipeline syntax)
        stage('Build & Tag Docker Image') {
             steps {
                 script{
