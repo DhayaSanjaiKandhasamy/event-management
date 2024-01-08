@@ -1,33 +1,11 @@
-FROM node: 18-alpine
-
-#Set the working directory to /app inside the containe
-
+FROM node:18.12.0-alpine as builder
 WORKDIR /app
-
-#Copy app files
-
-COPY . .
-
-#BUILD =====
-
-#Install dependencies (npm ci makes sure the exact ver
-
+COPY package*.json ./
 RUN npm install
-
-#Build the app
-
+COPY . .
 RUN npm run build
-
-#RUN
-
-#Set the env to "production"
-
-ENV NODE ENV production
-
-# Expose the port on which the app will be running (300)
-
-EXPOSE 3000
-
-#Start the app
-
-CMD [ "npx", "serve", "build"]
+# Stage 2: Create the production image
+FROM nginx:1.21.0-alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
