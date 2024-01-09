@@ -27,6 +27,15 @@ pipeline {
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
+
+        stage('Sonarqube') {
+            steps {
+                withSonarQubeEnv('sonar-server'){
+                   sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=event-management-app \
+                   -Dsonar.projectKey=event-management-app  '''
+               }
+            }
+        }
         
         stage('Build') {
             steps {
