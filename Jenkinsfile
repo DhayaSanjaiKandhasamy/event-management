@@ -48,6 +48,12 @@ pipeline {
             }
         }
 
+       stage('Trrivy Image Scan') {
+            steps {
+                sh "trivy image kubegourav/event-management:latest"
+            }
+        }
+        
        stage('Push Docker Image') {
             steps {
                 script{
