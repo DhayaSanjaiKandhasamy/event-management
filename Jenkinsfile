@@ -62,7 +62,7 @@ pipeline {
             steps {
                 script{
                     withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-                        sh "docker run -d --name= EVENT-APP -p 3001:80 kubegourav/event-management:latest"
+                        sh "docker run -d -p 3000:80 kubegourav/event-management:latest"
                     }
                 }
             }
